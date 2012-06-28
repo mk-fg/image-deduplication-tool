@@ -149,7 +149,7 @@ def main():
 		if optz.top_n != 0:
 			for i, (d, path1, path2) in enumerate(sort_by_similarity(dcts)):
 				print(path1, path2, d)
-				if optz.feh:
+				if optz.feh and all(it.imap(os.path.exists, [path1, path2])):
 					cmd = ['feh'] + list(arg.format( path1=path1, path2=path2,
 						pid=os.getpid(), diff=d ) for arg in optz.feh_args) + [path1, path2]
 					log.debug('Feh command: {}'.format(cmd))
