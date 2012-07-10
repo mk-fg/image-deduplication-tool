@@ -74,13 +74,13 @@ with --feh-args parameter. It's also possible to make it show images
 side-by-side in montage mode or in separate windows in multiwindow mode, see
 "man feh" for details.
 
-Default line (`feh -GNFY --info "echo '%f %wx%h (diff: {diff}, {diff_n} /
-{diff_count})'" --action8 "rm %f" --action1 "kill -INT {pid}" {path1} {path2}`)
-makes it show fullscreen image, some basic info (along with difference between
-image hashes and how much images there are with the same level of difference)
-about it and action reference, pressing "8" there will remove currently
-displayed version, "1" will stop the comparison and quitting feh ("q") will go
-to the next pair.
+Default line (`feh` `-GNFY` `--info` `"echo '%f %wx%h (diff: {diff}, {diff_n} /
+{diff_count})'"` `--action8` `"rm %f"` `--action1` `"kill -INT {pid}"` `{path1}`
+`{path2}`) makes it show fullscreen image, some basic info (along with
+difference between image hashes and how much images there are with the same
+level of difference) about it and action reference, pressing "8" there will
+remove currently displayed version, "1" will stop the comparison and quitting
+feh ("q") will go to the next pair.
 
 Without --feh (non-interactive / non-gui mode), tool outputs pairs of images and
 the [Hamming distance](https://en.wikipedia.org/wiki/Hamming_distance) value for
