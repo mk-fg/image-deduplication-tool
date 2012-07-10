@@ -92,11 +92,11 @@ def main():
 	parser.add_argument('--hash-db', metavar='PATH',
 		default='{}.db'.format(os.path.splitext(sys.argv[0])[0]),
 		help='Path to db to store hashes in (default: %(default)s).')
-	parser.add_argument('-d', '--shown-db',
+	parser.add_argument('-d', '--reported-db',
 		nargs='?', metavar='PATH', default=False,
 		help='Record already-displayed pairs in'
 				' a specified file and dont show these again.'
-			' Can be specified without parameter to use "shown.db" file in the current dir.')
+			' Can be specified without parameter to use "reported.db" file in the current dir.')
 	parser.add_argument('-p', '--parallel', type=int, metavar='THREADS',
 		help='How many hashing ops'
 			' can be done in parallel (default: try cpu_count() or 1).')
@@ -106,11 +106,13 @@ def main():
 		help='Run feh for each image match with'
 			' removal actions defined (see --feh-args).')
 	parser.add_argument('--feh-args', metavar='CMDLINE',
-		default=( '-GNFY --info "echo \'%f %wx%h (diff: {diff})\'"'
+		default=( '-GNFY --info "echo \'%f %wx%h'
+			' (diff: {diff}, {diff_n} / {diff_count})\'"'
 			' --action8 "rm %f" --action1 "kill -INT {pid}"' ),
 		help='Feh commandline parameters (space-separated,'
 			' unless quoted with ") before two image paths (default: %(default)s,'
-			' only used with --feh, python-format keywords available: path1, path2, pid, diff)')
+			' only used with --feh, python-format keywords available:'
+			' path1, path2, n, pid, diff, diff_n, diff_count)')
 	parser.add_argument('--debug',
 		action='store_true', help='Verbose operation mode.')
 	optz = parser.parse_args()
@@ -151,29 +153,43 @@ def main():
 				threads=optz.parallel if optz.parallel > 1 else False )
 		finally: pickle.dump(dcts, open(optz.hash_db, 'wb'))
 
-		if optz.shown_db is not False:
+		if optz.reported_db is not False:
 			import shelve
-			optz.shown_db = shelve.open(optz.shown_db or 'shown.db', 'c')
-		else: optz.shown_db = None
+			optz.reported_db = shelve.open(optz.reported_db or 'reported.db', 'c')
+			log.debug('Cleaning up reported_db of non-existent paths')
+			for paths_key in optz.reported_db.keys():
+				path1, path2 = paths_key.split('\0')
+				if not all(it.imap(os.path.exists, [path1, path2])):
+					del optz.reported_db[paths_key]
+		else: optz.reported_db = None
 
 		if optz.top_n != 0:
-			for i, (d, path1, path2) in enumerate(sort_by_similarity(dcts)):
-				if optz.shown_db is not None:
-					paths_key = '{}\0{}'.format(*sorted([path1, path2]))
-					if paths_key in optz.shown_db: continue
-				print(path1, path2, d)
-				if optz.feh and all(it.imap(os.path.exists, [path1, path2])):
-					cmd = ['feh'] + list(arg.format( path1=path1, path2=path2,
-						pid=os.getpid(), diff=d ) for arg in optz.feh_args) + [path1, path2]
-					log.debug('Feh command: {}'.format(cmd))
-					Popen(cmd).wait()
-				if optz.shown_db is not None\
-						and all(it.imap(os.path.exists, [path1, path2])):
-					optz.shown_db[paths_key] = True
-				if optz.top_n is not None and i >= optz.top_n: break
+			n, pid = 0, os.getpid()
+			for d, diff_tier in it.groupby(sort_by_similarity(dcts), key=op.itemgetter(0)):
+				diff_tier = list(diff_tier)
+				diff_count = len(diff_tier)
+				for diff_n, (d, path1, path2) in enumerate(diff_tier):
+					n += 1
+					if optz.reported_db is not None:
+						paths_key = '{}\0{}'.format(*sorted([path1, path2]))
+						if paths_key in optz.reported_db:
+							log.debug('Skipped path-pair due to reported_db: {} {}'.format(path1, path2))
+							continue
+					print(path1, path2, d)
+					if optz.feh and all(it.imap(os.path.exists, [path1, path2])):
+						cmd = ['feh'] + list(
+							arg.format( path1=path1, path2=path2, pid=pid,
+								diff=d, n=n+1, diff_n=diff_n+1, diff_count=diff_count )
+							for arg in optz.feh_args ) + [path1, path2]
+						log.debug('Feh command: {}'.format(cmd))
+						Popen(cmd).wait()
+					if optz.reported_db is not None\
+							and all(it.imap(os.path.exists, [path1, path2])):
+						optz.reported_db[paths_key] = True
+					if optz.top_n is not None and n >= optz.top_n: break
 	except KeyboardInterrupt: sys.exit(0)
 	finally:
-		if optz.shown_db is not None: optz.shown_db.sync()
+		if optz.reported_db is not None: optz.reported_db.sync()
 
 
 if __name__ == '__main__': main()
