@@ -92,6 +92,11 @@ def main():
 	parser.add_argument('--hash-db', metavar='PATH',
 		default='{}.db'.format(os.path.splitext(sys.argv[0])[0]),
 		help='Path to db to store hashes in (default: %(default)s).')
+	parser.add_argument('-d', '--shown-db',
+		nargs='?', metavar='PATH', default=False,
+		help='Record already-displayed pairs in'
+				' a specified file and dont show these again.'
+			' Can be specified without parameter to use "shown.db" file in the current dir.')
 	parser.add_argument('-p', '--parallel', type=int, metavar='THREADS',
 		help='How many hashing ops'
 			' can be done in parallel (default: try cpu_count() or 1).')
@@ -146,16 +151,29 @@ def main():
 				threads=optz.parallel if optz.parallel > 1 else False )
 		finally: pickle.dump(dcts, open(optz.hash_db, 'wb'))
 
+		if optz.shown_db is not False:
+			import shelve
+			optz.shown_db = shelve.open(optz.shown_db or 'shown.db', 'c')
+		else: optz.shown_db = None
+
 		if optz.top_n != 0:
 			for i, (d, path1, path2) in enumerate(sort_by_similarity(dcts)):
+				if optz.shown_db is not None:
+					paths_key = '{}\0{}'.format(*sorted([path1, path2]))
+					if paths_key in optz.shown_db: continue
 				print(path1, path2, d)
 				if optz.feh and all(it.imap(os.path.exists, [path1, path2])):
 					cmd = ['feh'] + list(arg.format( path1=path1, path2=path2,
 						pid=os.getpid(), diff=d ) for arg in optz.feh_args) + [path1, path2]
 					log.debug('Feh command: {}'.format(cmd))
 					Popen(cmd).wait()
+				if optz.shown_db is not None\
+						and all(it.imap(os.path.exists, [path1, path2])):
+					optz.shown_db[paths_key] = True
 				if optz.top_n is not None and i >= optz.top_n: break
 	except KeyboardInterrupt: sys.exit(0)
+	finally:
+		if optz.shown_db is not None: optz.shown_db.sync()
 
 
 if __name__ == '__main__': main()
