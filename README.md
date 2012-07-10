@@ -4,7 +4,7 @@ image-deduplication-tool: simple tool to detect (and get rid of) similar images 
 There's gonna be a lot of duplicates in almost any arbitrary collection of
 images, it can be actually surprising how many.
 
-pHash lib, which is the core of the tool easily detects cropped and retouched
+pHash lib, which is the core of the tool, easily detects cropped and retouched
 images, same thing in different resolutions and formats.
 
 Tool itself goes over the specified paths, calculating the hashes of all the
@@ -25,7 +25,7 @@ viewer, where human can make a decision to remove one image version or the other
 Requirements
 --------------------
 
-* [python 2.7](http://python.org) (with ctypes support)
+* [Python 2.7](http://python.org) (with ctypes support)
 * [libpHash](http://phash.org) (used via ctypes)
 * (optional) [feh image viewer](http://derf.homelinux.org/projects/feh/)
 
