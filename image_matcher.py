@@ -189,7 +189,7 @@ def main():
 					if optz.top_n is not None and n >= optz.top_n: break
 	except KeyboardInterrupt: sys.exit(0)
 	finally:
-		if optz.reported_db is not None: optz.reported_db.sync()
+		if optz.reported_db: optz.reported_db.sync()
 
 
 if __name__ == '__main__': main()
