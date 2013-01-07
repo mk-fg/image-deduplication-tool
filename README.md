@@ -22,6 +22,25 @@ viewer, where human can make a decision to remove one image version or the other
 (with pre-configured "rm" action), skip to the next pair or stop the comparison.
 
 
+Warning
+--------------------
+
+As illustrated in
+[#1](https://github.com/mk-fg/image-deduplication-tool/issues/1) and the "Known
+Issues" section, libpHash and/or CImg (which it's based on) can do quite strange
+and unexpected things when presented with non-images up to the point of
+executing malicious code from the filename in the shell.
+
+Simple safeguard for that would be only to run the tool on image paths, not
+paths that contain mixed-type files.
+
+One other precaution is that with --feh option, script will run "feh" program,
+and --feh-args parameter may contain options (e.g. --info) that will be executed
+in the shell by feh, so either don't use --feh for weird and/or
+possibly-malicious files or at least remove --info option from the --feh-args
+commandline.
+
+
 Requirements
 --------------------
 
@@ -128,8 +147,8 @@ pHash seem to be prone to hanging indefinitely on some non-image files without
 consuming much resources. Use `./image_matcher.py --debug -p 1` to see on which
 exact file it hangs in such cases.
 
-I'll probably add some check for file magic to see if it's image before running
-pHash over it in the future.
+I might add some check for file magic to see if it's image before running pHash
+over it in the future.
 
 pHash also gives zero as a hash value for some images. No idea why it does that
 atm, but these "0" values obviously can't be meaningfully compared to anything,
