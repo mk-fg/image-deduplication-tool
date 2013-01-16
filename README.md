@@ -26,13 +26,15 @@ Warning
 --------------------
 
 As illustrated in
-[#1](https://github.com/mk-fg/image-deduplication-tool/issues/1) and the "Known
-Issues" section, libpHash and/or CImg (which it's based on) can do quite strange
-and unexpected things when presented with non-images up to the point of
-executing malicious code from the filename in the shell.
+[#1](https://github.com/mk-fg/image-deduplication-tool/issues/1) and
+[CImg#49](https://sourceforge.net/p/cimg/bugs/49/), libpHash/CImg will fall back
+to using "sh -c" commands for non-image file formats and might not get
+filename-escaping correct there (especially with CImg versions up to 1.5.3).
 
 Simple safeguard for that would be only to run the tool on image paths, not
-paths that contain mixed-type files.
+paths that contain mixed-type files, or at least make sure there's no funky
+stuff in the filenames - checking that in the script is wrong, as proper image
+files work with any filename.
 
 One other precaution is that with --feh option, script will run "feh" program,
 and --feh-args parameter may contain options (e.g. --info) that will be executed

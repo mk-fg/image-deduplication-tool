@@ -4,7 +4,7 @@ from __future__ import print_function
 
 
 import itertools as it, operator as op, functools as ft
-import os, sys, ctypes, pickle, select, signal, struct
+import os, sys, ctypes, errno, pickle, select, signal, struct
 
 
 class pHash(object):
@@ -16,7 +16,8 @@ class pHash(object):
 		r, w = os.pipe()
 		pid = os.fork()
 		if not pid:
-			pickle.dump(self.dct_imagehash(path), os.fdopen(w, 'wb'))
+			with os.fdopen(w, 'wb') as dst:
+				pickle.dump(self.dct_imagehash(path), dst)
 			os._exit(0) # so "finally" clauses won't get triggered
 		else:
 			os.close(w)
@@ -26,7 +27,10 @@ class pHash(object):
 		phash = ctypes.c_uint64()
 		if self._lib.ph_dct_imagehash(path, ctypes.pointer(phash)):
 			errno_ = ctypes.get_errno()
-			raise OSError(errno_, os.strerror(errno_))
+			print( 'Failed to get image hash ({}): {}'\
+					.format(errno.errorcode[errno_], os.strerror(errno_)),
+				file=sys.stderr )
+			return None
 		return phash.value
 
 	def hamming_distance(self, hash1, hash2):
@@ -71,9 +75,9 @@ def sort_by_similarity(dcts):
 	log.debug('Calculating/sorting Hamming distances')
 	for img1, img2 in it.combinations(dcts.viewitems(), 2):
 		for path, h in img1, img2:
-			if h == 0:
+			if h == 0 or h is None:
 				if path not in paths_skipped:
-					log.debug('Skipping 0-hash path: {}'.format(path))
+					log.debug('Skipping no-hash path: {}'.format(path))
 					paths_skipped.add(path)
 				break
 		else:
