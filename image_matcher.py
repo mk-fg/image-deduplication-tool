@@ -27,9 +27,10 @@ class pHash(object):
 		phash = ctypes.c_uint64()
 		if self._lib.ph_dct_imagehash(path, ctypes.pointer(phash)):
 			errno_ = ctypes.get_errno()
-			print( 'Failed to get image hash ({!r}): [{}] {}'\
-					.format(path, errno.errorcode[errno_], os.strerror(errno_)),
-				file=sys.stderr )
+			err, err_msg = (errno.errorcode[errno_], os.strerror(errno_))\
+				if not errno else ('none', 'errno was set to 0')
+			print(( 'Failed to get image hash'
+				' ({!r}): [{}] {}' ).format(path, err, err_msg), file=sys.stderr)
 			return None
 		return phash.value
 
