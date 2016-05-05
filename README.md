@@ -33,10 +33,15 @@ to using potentially unsafe (exploitable with crafted pathnames) "sh -c"
 commands for non-image file formats and might not get filename-escaping
 correctly there (especially with CImg versions up to 1.5.3).
 
-Simple safeguard for that would be only to run the tool on image paths (where
-CImg doesn't run "sh"), not paths that contain mixed-type files, or at least
-make sure there's no funky stuff in the filenames - checking that in this script
-is wrong, as proper image files work with any filename.
+Simple safeguard for that particular issue would be only to run the tool on
+image paths (where CImg doesn't run "sh"), not paths that contain mixed-type
+files, or at least make sure there's no funky stuff in the filenames, script
+doesn't enforce any kind of policy there.
+
+Note also that thing libpHash/CImg runs (usually) is ImageMagick's "convert",
+which can have all sort of issues with malicious file contents (see e.g.
+[ImageTragick](imagetragick.com) bug there), so maybe it's not a good idea to
+run the tool on a bunch of unsanitized images, ever.
 
 One other precaution is that with the --feh option, script will run "feh"
 program, and --feh-args parameter may contain options (e.g. --info) that will be
